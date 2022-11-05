@@ -69,13 +69,39 @@ public class MainActivity extends AppCompatActivity {
             case RESULT_PLACE_SHOT: {
                 addChatLog("found command: " + command + " result: " + data + " field: " + data2);
                 int field = Integer.valueOf(data);
-                resultShot(field, data2);
+                resultShotResponse(field, data2);
                 break;
             }
-
+            case RESULT_PLACE_SHOT_RESPONSE: {
+                addChatLog("found command: " + command + " result: " + data + " field: " + data2);
+                int field = Integer.valueOf(data);
+                resultShotResponse(field, data2);
+                break;
+            }
         }
 
     }
+
+    /**
+     * complete workflow for chat engine in battle
+     * 01 player a is placing a shot on a field: placeShot with COMMAND_PLACE_SHOT and parameter field
+     * 02 player b is responding the shot: receiveShot with COMMAND_PLACE_SHOT_RESPONSE and parameter field
+     * 03 player a knows that the shot is transmitted when receiving the response
+     * 04 player b is checking the shot for a ship (hit): receiveShot with parameter field
+     * 05 player b 3 possible options in receiveShot
+     * 05a player b the shot gone to an empty field: send RESULT_PLACE_SHOT with parameters field and SHOT_NO_HIT
+     * 05b player b the shot gone to a field with a ship but ship is not sunk: send RESULT_PLACE_SHOT with parameters field and SHOT_HIT
+     * 05c player b the shot gone to a field with a ship and ship is sunk: send RESULT_PLACE_SHOT with parameters field and SHOT_SUNK
+     * 06 player a is responding the result: receiveShotResult with RESULT_PLACE_SHOT_RESPONSE with parameters field and SHOT_XXX
+     * 07 player b knows that player a got the result
+     * 08 the next shot depends on shot result:
+     * 08a shot result SHOT_NO_HIT: next shot goes to player b (changing active player)
+     * 08b shot result SHOT_HIT: next shot stays with player a (NOT changing active player)
+     * 08c shot result SHOT_SUNK: next shot stays with player a (NOT changing active player)
+     * 09 games runs until one player has no more ships (all ships are sunk)
+     *
+     */
+
 
     private void placeShot (int field) {
         /**
@@ -122,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
             cmd +=  SHOT_NO_HIT;
             chatEngine(cmd);
         }
-        addChatLog("receiveShot field " + String.valueOf(field) + " result: " + cmd);
+        addChatLog("receiveShot field " + fieldString + " result: " + cmd);
     }
 
     private void receiveShotResponse(int field) {
@@ -134,28 +160,28 @@ public class MainActivity extends AppCompatActivity {
         addChatLog("receiveShotResponse field " + field);
     }
 
-    private void resultShot(int field, String resultString) {
+    private void resultShotResponse(int field, String resultString) {
         /**
          * workflow
          * 1 mark the field as shot if NO_SHOT
          * 2 mark the field as hit if HIT
          * 3 mark the field as SUNK if SUNK
          */
-        addChatLog("resultShot field " + field + " result: " + resultString);
+        addChatLog("resultShotResponse field " + field + " result: " + resultString);
         switch (resultString) {
             case SHOT_NO_HIT: {
                 // mark the field simply as shot
-
+                addChatLog("resultShotResponse field " + field + " SHOT_NO_HIT");
                 break;
             }
             case SHOT_HIT: {
                 // mark the field as hit
-
+                addChatLog("resultShotResponse field " + field + " SHOT_HIT");
                 break;
             }
             case SHOT_SUNK: {
                 // mark the field as SUNK
-
+                addChatLog("resultShotResponse field " + field + " SHOT_SUNK");
                 break;
             }
         }
