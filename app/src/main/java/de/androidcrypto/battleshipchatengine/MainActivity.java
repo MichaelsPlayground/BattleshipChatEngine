@@ -19,6 +19,7 @@ public class MainActivity extends AppCompatActivity {
     final static String SHOT_HIT = "hit";
     final static String SHOT_SUNK = "sunk";
     final static String SHOT_NO_HIT = "nohit";
+    final static String GAME_OVER = "gameover";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void chatEngine (String input) {
+    private void chatEngine(String input) {
         addChatLog("chatEngine new command: " + input);
         boolean result = false;
         String[] parts = input.split(":", 0);
@@ -78,6 +79,12 @@ public class MainActivity extends AppCompatActivity {
                 resultShotResponse(field, data2);
                 break;
             }
+            case GAME_OVER: {
+                addChatLog("found command: " + command + " result: " + data + " field: " + data2);
+                int field = Integer.valueOf(data);
+                receiveGameOver(field);
+                break;
+            }
         }
 
     }
@@ -99,11 +106,10 @@ public class MainActivity extends AppCompatActivity {
      * 08b shot result SHOT_HIT: next shot stays with player a (NOT changing active player)
      * 08c shot result SHOT_SUNK: next shot stays with player a (NOT changing active player)
      * 09 games runs until one player has no more ships (all ships are sunk)
-     *
      */
 
 
-    private void placeShot (int field) {
+    private void placeShot(int field) {
         /**
          * workflow
          * 1 mark this field as temporary shot
@@ -133,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
         String cmd = RESULT_PLACE_SHOT + ":" + fieldString + ":";
         boolean hit = false;
         // todo this is a dummy check, fields < 10 are marked as hit
-        if (field < 10) hit = true;
+        if (field < 11) hit = true;
         if (hit) {
             // check if sunk or not
             if (field > 7) {
@@ -145,10 +151,17 @@ public class MainActivity extends AppCompatActivity {
                 chatEngine(cmd);
             }
         } else {
-            cmd +=  SHOT_NO_HIT;
+            cmd += SHOT_NO_HIT;
             chatEngine(cmd);
         }
         addChatLog("receiveShot field " + fieldString + " result: " + cmd);
+
+        // check for the last active ship
+        if (field == 10) {
+            // all ships are sunk
+            respondString = GAME_OVER + ":" + fieldString;
+            chatEngine(respondString);
+        }
     }
 
     private void receiveShotResponse(int field) {
@@ -187,9 +200,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void receiveGameOver(int field) {
+        addChatLog("receiveGameOver field " + field);
+    }
 
-
-    private void addChatLog (String message) {
+    private void addChatLog(String message) {
         String messageNew = message + "\n" +
                 chatLog.getText().toString();
         chatLog.setText(messageNew);
